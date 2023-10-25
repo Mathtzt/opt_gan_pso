@@ -1,8 +1,8 @@
-from math import floor
 import os
 import pandas as pd
-from classes.base.enums import HeuristicNames, OptimizerNames
+import math
 
+from classes.base.enums import HeuristicNames, OptimizerNames
 from classes.base.namespaces import ExperimentDict
 from classes.helper.utils import Utils
 from classes.optimizers.pso import PSO
@@ -32,24 +32,21 @@ class Experiments:
 
         return paths_dict
     
-    def init_metaheuristic(self):
-        if self.exp_dict.heuristic_opt == HeuristicNames.PSO:
-            pso = PSO(omega = self.exp_dict.heuristic_opt.omega,
-                      min_speed = self.exp_dict.heuristic_opt.min_speed,
-                      max_speed = self.exp_dict.heuristic_opt.max_speed,
-                      cognitive_update_factor = self.exp_dict.heuristic_opt.cognitive_update_factor,
-                      social_update_factor = self.exp_dict.heuristic_opt.social_update_factor,
-                      reduce_omega_linearly = self.exp_dict.heuristic_opt.reduce_omega_linearly,
-                      reduction_speed_factor = self.exp_dict.heuristic_opt.reduction_speed_factor,
+    def run(self):
+
+        if self.exp_dict.heuristic_opt.name == HeuristicNames.PSO:
+            pso = PSO(exp_dict = self.exp_dict,
+                      paths_dict = self.paths_dict,
                       show_log = False)
             
-            pso.main()
+            pso.main(func_ = self.get_dcgan_gloss)
+            print("######## RESULTADO ########\n")
+            self.formatParams(pso.best)
 
     def convertParams(self, params):
-
         learning_rate = params[0]
-        goptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][floor(params[1])]
-        doptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][floor(params[2])]
+        goptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][math.floor(params[1])]
+        doptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][math.floor(params[2])]
 
         return learning_rate, goptimizer, doptimizer
 

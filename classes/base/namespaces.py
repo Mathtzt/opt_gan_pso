@@ -1,10 +1,10 @@
 from typing import NamedTuple
 
-from classes.base.enums import DatasetsNames, HeuristicNames, OptimizerNames
+from classes.base.enums import DatasetNames, HeuristicNames
 
 class DatasetDict(NamedTuple):
-    type: DatasetsNames
-    class_number: int
+    type: DatasetNames
+    class_name: str
 
 class PSODict(NamedTuple):
     name: HeuristicNames
@@ -23,8 +23,7 @@ class PSODict(NamedTuple):
 
 class ExperimentDict(NamedTuple):
     name: str
+    description: str
     dataset: DatasetDict
     nexecucoes: int
     heuristic_opt: PSODict
-    goptimizer: OptimizerNames
-    doptimizer: OptimizerNames

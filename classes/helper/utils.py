@@ -84,3 +84,15 @@ class Utils:
             dic = json.load(f)
             
             return dic
+        
+    @staticmethod
+    def save_experiment_as_csv(base_dir: str, dataframe: pd.DataFrame, filename: str):
+        BASE_DIR = base_dir
+        FILE_PATH = BASE_DIR + '/' + filename + '.csv'
+        if not os.path.exists(FILE_PATH):
+            dataframe.to_csv(FILE_PATH, index = False)
+        else:
+            df_loaded = pd.read_csv(FILE_PATH)
+            dataframe_updated = pd.concat([df_loaded, dataframe], axis = 0)
+
+            dataframe_updated.to_csv(FILE_PATH, index = False)

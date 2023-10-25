@@ -3,7 +3,7 @@ from enum import Enum
 class HeuristicNames(Enum):
     PSO = 'pso'
 
-class DatasetsNames(Enum):
+class DatasetNames(Enum):
     CIFAR10 = 'cifar10'
 
 class Cifar10Classes(Enum):

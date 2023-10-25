@@ -11,7 +11,7 @@ from classes.base.enums import Cifar10Classes
 class Datasets:
         
     @staticmethod
-    def get_cifar_as_dataloaders(datapath: str = "data/", batch_size: int = 32, specialist_class: str = 'airplane'):
+    def get_cifar_as_dataloaders(datapath: str = "./data/", batch_size: int = 32, specialist_class: str = 'airplane'):
         transform = transforms.Compose([
                                         transforms.ToTensor(),
                                         transforms.Normalize((0.5,), (0.5,))])

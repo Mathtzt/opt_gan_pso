@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
 from IPython.display import HTML
+from tqdm import tqdm
 from classes.base.namespaces import ExperimentDict
 
 from classes.helper.utils import Utils
 from classes.helper.datasets import Datasets
-from classes.base.enums import DatasetsNames, OptimizerNames
+from classes.base.enums import DatasetNames, OptimizerNames
 
 from .generator import Generator
 from .discriminator import Discriminator
@@ -37,7 +38,7 @@ class DCGan():
         self.lr = lr
 
         self.data_type = exp_dict.dataset.type
-        self.specialist_class = exp_dict.dataset.class_number
+        self.specialist_class = exp_dict.dataset.class_name
 
         self.datapath = paths_dict["data"]
 
@@ -47,7 +48,7 @@ class DCGan():
         self.d_optimizer = None
         self.loss_func = None
 
-        self.num_epochs = 100
+        self.num_epochs = 30
         self.batch_size = 32
         self.ngpu = 1
         self.nchannel = 3
@@ -81,14 +82,14 @@ class DCGan():
 
         # Setup Adam optimizers for both G and D
         if self.g_optimizer_type == OptimizerNames.ADAM:
-            self.g_optimizer = optim.Adam(self.generator.parameters(), lr=self.lr, betas=(0.5, 0.999))
+            self.g_optimizer = optim.Adam(self.generator.parameters(), lr = self.lr, betas=(0.5, 0.999))
         if self.g_optimizer_type == OptimizerNames.SGD:
-            self.g_optimizer == optim.SGD(self.generator.parameters(), lr = self.lr, momentum = 0.9)
+            self.g_optimizer = optim.SGD(self.generator.parameters(), lr = self.lr, momentum = 0.9)
 
         if self.d_optimizer_type == OptimizerNames.ADAM:
-            self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(0.5, 0.999))
+            self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr = self.lr, betas=(0.5, 0.999))
         if self.d_optimizer_type == OptimizerNames.SGD:
-            self.d_optimizer == optim.SGD(self.discriminator.parameters(), lr = self.lr, momentum = 0.9)
+            self.d_optimizer = optim.SGD(self.discriminator.parameters(), lr = self.lr, momentum = 0.9)
 
     def vector_to_images(self, vectors, dsize: tuple = (32, 32)):
         return vectors.view(vectors.size(0), self.nchannel, dsize[0], dsize[1])
@@ -101,7 +102,7 @@ class DCGan():
         self.generator = torch.jit.load(model_path)
 
     def fit(self):
-        if self.data_type == DatasetsNames.CIFAR10:
+        if self.data_type == DatasetNames.CIFAR10:
             dataloader = Datasets.get_cifar_as_dataloaders(datapath = self.datapath, 
                                                            specialist_class = self.specialist_class)
         else:
@@ -124,7 +125,7 @@ class DCGan():
 
         print("Starting Training Loop...")
         # For each epoch
-        for epoch in range(self.num_epochs):
+        for epoch in tqdm(range(self.num_epochs)):
             # For each batch in the dataloader
             for i, data in enumerate(dataloader, 0):
 
@@ -136,7 +137,7 @@ class DCGan():
                 # Format batch
                 real_cpu = data[0].to(self.device)
                 b_size = real_cpu.size(0)
-                label = torch.full((b_size,), real_label, dtype = torch.float, device=self.device)
+                label = torch.full((b_size,), real_label, dtype = torch.float, device = self.device)
                 # Forward pass real batch through D
                 output = self.discriminator(real_cpu).view(-1)
                 # Calculate loss on all-real batch
@@ -147,7 +148,7 @@ class DCGan():
 
                 ## Train with all-fake batch
                 # Generate batch of latent vectors
-                noise = torch.randn(b_size, self.nlatent_space, 1, 1, device=self.device)
+                noise = torch.randn(b_size, self.nlatent_space, 1, 1, device = self.device)
                 # Generate fake image batch with G
                 fake = self.generator(noise)
                 label.fill_(fake_label)
