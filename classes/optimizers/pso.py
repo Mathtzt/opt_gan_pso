@@ -29,7 +29,7 @@ class PSO:
 
         self.nparams = len(self.u_bound)
 
-        self.max_evaluations = 10 #10000 * self.nparams
+        self.max_evaluations = exp_dict.heuristic_opt.max_evaluations
         self.nout_bounds = 0
         self.best = None
         self.toolbox = base.Toolbox()
@@ -88,6 +88,7 @@ class PSO:
                 if best is None or best.size == 0 or best.fitness < particle.fitness:
                     best = creator.Particle(particle)
                     best.fitness.values = particle.fitness.values
+                    print(best, particle.fitness.values)
                 # atualizando número de avaliações, verificando limites de tempo de otimização permitidos
                 # nevaluations += 1
                 # stop_cond1 = abs(best.fitness.values[0] - func_[1]) < 10e-8
@@ -106,16 +107,13 @@ class PSO:
             # if generation == 1 or generation % 500 == 0:
             best_fitness_history.append(best.fitness.values)
             logbook.record(gen = generation,
-                            evals = len(population),
-                            **stats.compile(population))
+                           evals = len(population),
+                           **stats.compile(population))
             if self.show_log:
                 if self.reduce_omega_linearly:
                     print(logbook.stream + f" | omega = {omega}")
                 else:
                     print(logbook.stream)
-            
-            if finish_optimization:
-                break
 
         avg_fitness_history = [logbook[i]['avg'] for i in range(len(logbook))]
         self.best = best

@@ -1,29 +1,22 @@
-import os
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from PIL import Image
-from IPython.display import HTML
-from tqdm import tqdm
-from classes.base.namespaces import ExperimentDict
-
-from classes.helper.utils import Utils
-from classes.helper.datasets import Datasets
-from classes.base.enums import DatasetNames, OptimizerNames
-
-from .generator import Generator
-from .discriminator import Discriminator
 
 import torch
 torch.manual_seed(42)
 torch.cuda.empty_cache()
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd.variable import Variable
 
-import torchvision
-from torchvision import datasets, transforms
-import torchvision.utils as vutils
+from PIL import Image
+from tqdm import tqdm
+from classes.base.namespaces import ExperimentDict
+
+from classes.helper.utils import Utils
+from classes.helper.datasets import Datasets
+from classes.helper.vis import Vis
+from classes.base.enums import DatasetNames, OptimizerNames
+
+from .generator import Generator
+from .discriminator import Discriminator
 
 class DCGan():
     def __init__(self,
@@ -40,8 +33,7 @@ class DCGan():
         self.data_type = exp_dict.dataset.type
         self.specialist_class = exp_dict.dataset.class_name
 
-        self.datapath = paths_dict["data"]
-        self.modelpath = paths_dict["model"]
+        self.paths_dict = paths_dict
 
         self.generator = None
         self.discriminator = None
@@ -77,10 +69,8 @@ class DCGan():
         self.discriminator = Discriminator(nc = self.nchannel).to(self.device)
         self.discriminator.apply(self.weights_init)
 
-    def setup_optimizer_loss(self):
+    def setup_optimizer(self):
         # Initialize the loss function
-        self.loss_func = nn.BCELoss()     
-
         # Setup Adam optimizers for both G and D
         if self.g_optimizer_type == OptimizerNames.ADAM:
             self.g_optimizer = optim.Adam(self.generator.parameters(), lr = self.lr, betas=(0.5, 0.999))
@@ -97,119 +87,109 @@ class DCGan():
     
     def save(self, model, filename: str = 'model_gan.pt'):
         model_scripted = torch.jit.script(model) # Export to TorchScript
-        model_scripted.save(f'{self.modelpath}/{filename}')
+        model_scripted.save(f'{self.paths_dict["model"]}/{filename}')
 
     def load(self, model_path: str):
         self.generator = torch.jit.load(model_path)
 
     def fit(self):
         if self.data_type == DatasetNames.CIFAR10:
-            dataloader = Datasets.get_cifar_as_dataloaders(datapath = self.datapath, 
+            dataloader = Datasets.get_cifar_as_dataloaders(datapath = self.paths_dict["data"], 
                                                            specialist_class = self.specialist_class)
         else:
             raise Exception("data_type não implementado ainda.")
 
         self.nchannel = next(iter(dataloader))[0].size(1)
         self.setup_network()
-        self.setup_optimizer_loss()
+        self.setup_optimizer()
 
-        # Create batch of latent vectors that we will use to visualize the progression of the Gerador
-        fixed_noise = torch.randn(self.batch_size, self.nlatent_space, 1, 1, device = self.device)
-        # Lists to keep track of progress
-        img_list = []
-        G_losses = []
-        D_losses = []
-        iters = 0
+        epoch_g_loss, epoch_d_loss = [], []
         # Establish convention for real and fake labels during training
         real_label = 1.
         fake_label = 0.
-
+        d_train_steps = 1
         print("Starting Training Loop...")
         # For each epoch
         for epoch in tqdm(range(self.num_epochs)):
             # For each batch in the dataloader
+            G_losses, D_losses = [], []
+            
             for i, data in enumerate(dataloader, 0):
+                
+                D_step_loss = []
+                for _ in range(d_train_steps):
 
-                ############################
-                # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-                ###########################
-                ## Train with all-real batch
-                self.discriminator.zero_grad()
-                # Format batch
-                real_cpu = data[0].to(self.device)
-                b_size = real_cpu.size(0)
-                label = torch.full((b_size,), real_label, dtype = torch.float, device = self.device)
-                # Forward pass real batch through D
-                output = self.discriminator(real_cpu).view(-1)
-                # Calculate loss on all-real batch
-                errD_real = self.loss_func(output, label)
-                # Calculate gradients for D in backward pass
-                errD_real.backward()
-                D_x = output.mean().item()
+                    real_img = data[0].to(self.device)
+                    b_size = real_img.size(0)
+                    label = torch.full((b_size,), real_label, dtype = torch.float, device = self.device)
 
-                ## Train with all-fake batch
-                # Generate batch of latent vectors
-                noise = torch.randn(b_size, self.nlatent_space, 1, 1, device = self.device)
-                # Generate fake image batch with G
-                fake = self.generator(noise)
-                label.fill_(fake_label)
-                # Classify all fake batch with D
-                output = self.discriminator(fake.detach()).view(-1)
-                # Calculate D's loss on the all-fake batch
-                errD_fake = self.loss_func(output, label)
-                # Calculate the gradients for this batch, accumulated (summed) with previous gradients
-                errD_fake.backward()
-                D_G_z1 = output.mean().item()
-                # Compute error of D as sum over the fake and the real batches
-                errD = errD_real + errD_fake
-                # Update D
-                self.d_optimizer.step()
+                    self.d_optimizer.zero_grad()
 
-                ############################
-                # (2) Update G network: minimize log(D(G(z)))
-                ###########################
-                self.generator.zero_grad()
-                label.fill_(real_label)  # fake labels are real for Gerador cost
-                # Since we just updated D, perform another forward pass of all-fake batch through D
-                output = self.discriminator(fake).view(-1)
-                # Calculate G's loss based on this output
-                errG = self.loss_func(output, label)
-                # Calculate gradients for G
-                errG.backward()
-                D_G_z2 = output.mean().item()
-                # Update G
+                    d_loss = self.train_discriminator(real_img)
+
+                    d_loss.backward()
+                    self.d_optimizer.step()
+
+                    D_step_loss.append(d_loss.item())
+
+                D_losses.append(np.mean(D_step_loss))
+
+                self.g_optimizer.zero_grad()
+
+                g_loss = self.train_generator(real_img)
+                
+                G_losses.append(g_loss.item())
+
+                g_loss.backward()
                 self.g_optimizer.step()
 
-                ## Output training stats
-                # if i % 50 == 0:
-                #     print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
-                #         % (epoch, nepochs, i, len(dataloader),
-                #             errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
+            print ("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f"
+                   %(epoch, self.num_epochs, np.mean(G_losses), np.mean(D_losses)))
 
-                # Save Losses for plotting later
-                G_losses.append(errG.item())
-                D_losses.append(errD.item())
-
-                ## Check how the Gerador is doing by saving G's output on fixed_noise
-                # if (iters % 500 == 0) or ((epoch == nepochs-1) and (i == len(dataloader)-1)):
-                #     with torch.no_grad():
-                #         fake = self.generator(fixed_noise).detach().cpu()
-                #     img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
-
-                # iters += 1
+            epoch_g_loss.append(np.mean(G_losses))
+            epoch_d_loss.append(np.mean(D_losses))
         
         self.save(model = self.generator, filename = f'model_{self.specialist_class}.pt')
 
+        Utils.save_list_as_txt(epoch_g_loss, self.paths_dict["eval_metrics"], name = "generator_losses")
+        Utils.save_list_as_txt(epoch_d_loss, self.paths_dict["eval_metrics"], name = "discriminator_losses")
+
+        Vis.plot_gan_train_evolution(epoch_g_loss, epoch_d_loss, self.paths_dict["eval_imgs"], "gan_loss_evolution")
+
         return G_losses[-1]
 
-    def generate_sinthetic_images(self, dirname: str = "gen_imgs"):
+    def train_discriminator(self, real_cpu):
+        noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
+
+        g_out = self.generator(noise)
+
+        d_fake = self.discriminator(g_out.detach()).view(-1)
+        d_real = self.discriminator(real_cpu)#.view(-1)
+
+        d_loss = torch.sum(-torch.mean(torch.log(d_real + 1e-8)
+                                       + torch.log(1 - d_fake + 1e-8)))
+
+        return d_loss
+    
+    def train_generator(self, real_cpu):
+        noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
+
+        g_out = self.generator(noise)
+        d_out = self.discriminator(g_out)#.view(-1)
+
+        g_loss = -torch.mean(torch.log(d_out + 1e-8))
+
+        return g_loss
+    
+    def generate_synthetic_images(self, exp_dirname: str):
         ## Verificando se há um modelo instanciado ##
         if self.generator is None:
             return "Necessário carregar um modelo previamente. Utilize a função load()."
         
         base_dir = './'
-        dirpath = Utils.criar_pasta(path = base_dir, name = dirname)
-        imgpath = Utils.criar_pasta(path = dirpath, name = self.specialist_class)
+        dirpath = Utils.criar_pasta(path = base_dir, name = "gen_imgs")
+        exp_path = Utils.criar_pasta(path = dirpath, name = exp_dirname)
+        img_path = Utils.criar_pasta(path = exp_path, name = self.specialist_class)
 
         ## Gerando imagens sintéticas ##
         # Carregando ruido aleatório   
@@ -234,6 +214,6 @@ class DCGan():
             # Crie um objeto de imagem usando a matriz de dados
             image = Image.fromarray(data, mode='RGB')
             # Especifique o caminho do arquivo onde deseja salvar a imagem
-            filename = f'{imgpath}/img_{i}.jpg' 
+            filename = f'{img_path}/img_{i}.jpg' 
             # Salve a imagem
             image.save(filename)

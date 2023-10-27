@@ -7,6 +7,7 @@ from classes.base.namespaces import ExperimentDict
 from classes.helper.utils import Utils
 from classes.optimizers.pso import PSO
 from classes.synthesizers.dcgan.dcgan import DCGan
+from classes.synthesizers.dcgan.dcgan2 import DCGan as DCGAN2
 
 class Experiments:
     def __init__(self,
@@ -41,9 +42,9 @@ class Experiments:
             
             pso.main(func_ = self.get_dcgan_gloss)
             print("######## RESULTADO ########\n")
-            self.formatParams(pso.best)
+            print(self.format_params(pso.best))
 
-    def convertParams(self, params):
+    def convert_params(self, params):
         learning_rate = params[0]
         goptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][math.floor(params[1])]
         doptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM][math.floor(params[2])]
@@ -51,7 +52,7 @@ class Experiments:
         return learning_rate, goptimizer, doptimizer
 
     def get_dcgan_gloss(self, params):
-        learning_rate, goptimizer, doptimizer = self.convertParams(params)
+        learning_rate, goptimizer, doptimizer = self.convert_params(params)
 
         synthesizer = DCGan(exp_dict = self.exp_dict,
                             g_optimizer_type = goptimizer,
@@ -62,10 +63,26 @@ class Experiments:
 
         return gloss,
 
-    def formatParams(self, params):
-        learning_rate, goptimizer, doptimizer = self.convertParams(params)
+    def format_params(self, params):
+        learning_rate, goptimizer, doptimizer = self.convert_params(params)
         
         return "'learning_rate'={}\n " \
                "'g_optimizer'='{}'\n " \
                "'d_optimizer'='{}'\n " \
             .format(learning_rate, goptimizer, doptimizer)
+    
+    def train_synthesize_imgs(self):
+        # synthesizer = DCGan(exp_dict = self.exp_dict,
+        #                     g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
+        #                     d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
+        #                     lr = self.exp_dict.synthesizer.lr,
+        #                     paths_dict = self.paths_dict)
+        
+        synthesizer = DCGAN2(exp_dict = self.exp_dict,
+                             g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
+                             d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
+                             lr = self.exp_dict.synthesizer.lr,
+                             paths_dict = self.paths_dict)
+        
+        synthesizer.fit()
+        synthesizer.generate_synthetic_images(exp_dirname = str(self.paths_dict.get("exp")).split("/")[3])
