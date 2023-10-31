@@ -14,6 +14,7 @@ from classes.helper.utils import Utils
 from classes.helper.datasets import Datasets
 from classes.helper.vis import Vis
 from classes.base.enums import DatasetNames, OptimizerNames
+from classes.helper.fid_measure import FID
 
 from .generator import Generator
 from .discriminator import Discriminator
@@ -108,6 +109,7 @@ class DCGan():
         real_label = 1.
         fake_label = 0.
         d_train_steps = 1
+    
         print("Starting Training Loop...")
         # For each epoch
         for epoch in tqdm(range(self.num_epochs)):
@@ -117,34 +119,45 @@ class DCGan():
             for i, data in enumerate(dataloader, 0):
                 
                 D_step_loss = []
-                for _ in range(d_train_steps):
+                real_img = data[0].to(self.device)
 
-                    real_img = data[0].to(self.device)
-                    b_size = real_img.size(0)
-                    label = torch.full((b_size,), real_label, dtype = torch.float, device = self.device)
+                noise = torch.randn(real_img.size(0), self.nlatent_space, 1, 1, device = self.device)
+                fake_img = self.train_generator(noise, True)
+                
+                # img_size = real_img.size(0)
+                # label = torch.full((img_size,), real_label, dtype = torch.float, device = self.device)
+                
+                for _ in range(d_train_steps):
+                    #################
+                    # Discriminator #
+                    #################
 
                     self.d_optimizer.zero_grad()
 
-                    d_loss = self.train_discriminator(real_img)
+                    d_loss = self.train_discriminator(real_img, fake_img)
 
-                    d_loss.backward()
+                    d_loss.backward(retain_graph=True)
                     self.d_optimizer.step()
 
                     D_step_loss.append(d_loss.item())
 
                 D_losses.append(np.mean(D_step_loss))
 
+                #################
+                ### Generator ###
+                #################
                 self.g_optimizer.zero_grad()
 
-                g_loss = self.train_generator(real_img)
+                g_loss, fimage = self.train_generator(noise)
                 
                 G_losses.append(g_loss.item())
 
-                g_loss.backward()
+                g_loss.backward(retain_graph=True)
                 self.g_optimizer.step()
 
-            print ("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f"
-                   %(epoch, self.num_epochs, np.mean(G_losses), np.mean(D_losses)))
+            fid = FID.calculate_fretchet(real_img, fimage, self.device)
+            print("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f, FID: %.4f"
+                   %(epoch, self.num_epochs, np.mean(G_losses), np.mean(D_losses), fid))
 
             epoch_g_loss.append(np.mean(G_losses))
             epoch_d_loss.append(np.mean(D_losses))
@@ -158,28 +171,30 @@ class DCGan():
 
         return G_losses[-1]
 
-    def train_discriminator(self, real_cpu):
-        noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
+    def train_discriminator(self, real_img, fake_img):
+        # noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
 
-        g_out = self.generator(noise)
+        # fake_img = self.generator(noise)
 
-        d_fake = self.discriminator(g_out.detach()).view(-1)
-        d_real = self.discriminator(real_cpu)#.view(-1)
+        d_out_fake = self.discriminator(fake_img)#.view(-1)
+        d_out_real = self.discriminator(real_img)#.view(-1)
 
-        d_loss = torch.sum(-torch.mean(torch.log(d_real + 1e-8)
-                                       + torch.log(1 - d_fake + 1e-8)))
+        d_loss = torch.sum(-torch.mean(torch.log(d_out_real + 1e-8)
+                                       + torch.log(1 - d_out_fake + 1e-8)))
 
         return d_loss
     
-    def train_generator(self, real_cpu):
-        noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
+    def train_generator(self, noise, first_gen = False):
 
-        g_out = self.generator(noise)
-        d_out = self.discriminator(g_out)#.view(-1)
-
+        fake_img = self.generator(noise)
+    
+        if first_gen:
+            return fake_img
+        
+        d_out = self.discriminator(fake_img)#.view(-1)
         g_loss = -torch.mean(torch.log(d_out + 1e-8))
 
-        return g_loss
+        return g_loss, fake_img
     
     def generate_synthetic_images(self, exp_dirname: str):
         ## Verificando se há um modelo instanciado ##

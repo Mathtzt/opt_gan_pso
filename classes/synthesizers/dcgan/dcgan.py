@@ -10,7 +10,7 @@ from classes.base.namespaces import ExperimentDict
 from classes.helper.utils import Utils
 from classes.helper.datasets import Datasets
 from classes.base.enums import DatasetNames, OptimizerNames
-
+from classes.helper.fid_measure import FID
 from .generator import Generator
 from .discriminator import Discriminator
 
