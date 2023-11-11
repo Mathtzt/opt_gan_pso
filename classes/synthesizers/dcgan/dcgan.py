@@ -104,8 +104,8 @@ class DCGan():
 
     def fit(self):
         if self.data_type == DatasetNames.CIFAR10:
-            dataloader = Datasets.get_cifar_as_dataloaders(datapath = self.datapath, 
-                                                           specialist_class = self.specialist_class)
+            dataloader, _ = Datasets.get_cifar_as_dataloaders(datapath = self.datapath, 
+                                                              specialist_class = self.specialist_class)
         else:
             raise Exception("data_type não implementado ainda.")
 

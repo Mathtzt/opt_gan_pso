@@ -34,3 +34,4 @@ class ExperimentDict(NamedTuple):
     nexecucoes: int
     heuristic_opt: PSODict
     synthesizer: DCGANDict
+    use_ignite_temp: bool

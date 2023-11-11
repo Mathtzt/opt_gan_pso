@@ -96,3 +96,28 @@ class Utils:
             dataframe_updated = pd.concat([df_loaded, dataframe], axis = 0)
 
             dataframe_updated.to_csv(FILE_PATH, index = False)
+
+    @staticmethod
+    def rgb_to_gray(image):
+        # Converte a imagem para escala de cinza usando média ponderada dos canais RGB
+        grayscale_image = torch.mean(image, dim=0).unsqueeze(0)
+
+        return grayscale_image
+    
+    @staticmethod
+    # Função para calcular a PDF de uma classe específica em escala de cinza
+    def calculate_pdf(dataset, class_label):
+        # Filtra o dataset para conter apenas amostras da classe escolhida
+        class_dataset = [sample for sample in dataset if sample[1] == class_label]
+
+        # Obtenha os valores de pixel
+        pixel_values = [sample[0].numpy().flatten() for sample in class_dataset]
+
+        # Concatene os valores de pixel
+        pixel_values = np.concatenate(pixel_values)
+
+        # Calcule a PDF das intensidades de pixel
+        hist, bins = np.histogram(pixel_values, bins=256, range=(0, 1), density=True)
+        pdf = hist / np.sum(hist)
+
+        return pdf, bins, class_label

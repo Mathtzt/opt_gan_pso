@@ -22,3 +22,4 @@ class Cifar10Classes(Enum):
 class OptimizerNames(Enum):
     SGD = 'stochastic gradient descent'
     ADAM = 'adam'
+    NADAM = 'ndam'

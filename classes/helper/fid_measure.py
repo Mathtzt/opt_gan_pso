@@ -132,7 +132,7 @@ class InceptionV3(nn.Module):
         if os.path.exists(InceptionV3.PATH_SAVE_MODEL):
             inception = self.load(InceptionV3.PATH_SAVE_MODEL)
         else:
-            inception = models.inception_v3(pretrained=True)
+            inception = models.inception_v3(weights = models.Inception_V3_Weights.DEFAULT)
             self.save(inception, InceptionV3.PATH_SAVE_MODEL)
 
         # Block 0: input to maxpool1

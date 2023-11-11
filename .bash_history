@@ -125,3 +125,150 @@ python main.py
 python main.py
 python main.py
 python main.py
+python main.py
+singularity cache
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+clear
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py 
+clear
+python main.py
+clear
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py
+pip install torchmetrics
+python main.py
+pip install torch-fidelity
+clear
+python main.py
+python main.py
+python main.py
+pip install pytorch-ignite
+python -m pip install --upgrade pip
+clear
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py
+clear
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py

@@ -72,6 +72,7 @@ class PSO:
         avg_euclidian_distance_history = []
 
         for idx, generation in enumerate(range(1, self.max_evaluations + 1)):
+            print(f"### Geração {idx} ###")
             # reduzindo omega linearmente
             if self.reduce_omega_linearly:
                 omega = self.omega - (idx * (self.omega - 0.4) / (self.max_evaluations * self.reduction_speed_factor))
@@ -88,7 +89,6 @@ class PSO:
                 if best is None or best.size == 0 or best.fitness < particle.fitness:
                     best = creator.Particle(particle)
                     best.fitness.values = particle.fitness.values
-                    print(best, particle.fitness.values)
                 # atualizando número de avaliações, verificando limites de tempo de otimização permitidos
                 # nevaluations += 1
                 # stop_cond1 = abs(best.fitness.values[0] - func_[1]) < 10e-8

@@ -5,6 +5,8 @@ torch.manual_seed(42)
 torch.cuda.empty_cache()
 import torch.nn as nn
 import torch.optim as optim
+from torchmetrics.image.fid import FrechetInceptionDistance
+from torchvision import transforms
 
 from PIL import Image
 from tqdm import tqdm
@@ -22,10 +24,12 @@ from .discriminator import Discriminator
 class DCGan():
     def __init__(self,
                  exp_dict: ExperimentDict,
+                 paths_dict: dict,
                  g_optimizer_type: OptimizerNames,
                  d_optimizer_type: OptimizerNames,
                  lr: float,
-                 paths_dict: dict):
+                 batch_size: int = None,
+                 latent_size: int = 100):
         
         self.g_optimizer_type = g_optimizer_type
         self.d_optimizer_type = d_optimizer_type
@@ -43,10 +47,10 @@ class DCGan():
         self.loss_func = None
 
         self.num_epochs = exp_dict.synthesizer.num_epochs
-        self.batch_size = exp_dict.synthesizer.batch_size
+        self.batch_size = batch_size if batch_size else exp_dict.synthesizer.batch_size
         self.ngpu = 1
         self.nchannel = 3
-        self.nlatent_space = 100
+        self.nlatent_space = latent_size
         self.data_dim = 1024 #ref: tamanho da img 32x32
 
         self.device = Utils.get_device_available()
@@ -77,11 +81,15 @@ class DCGan():
             self.g_optimizer = optim.Adam(self.generator.parameters(), lr = self.lr, betas=(0.5, 0.999))
         if self.g_optimizer_type == OptimizerNames.SGD:
             self.g_optimizer = optim.SGD(self.generator.parameters(), lr = self.lr, momentum = 0.9)
+        if self.g_optimizer_type == OptimizerNames.NADAM:
+            self.g_optimizer = optim.NAdam(self.generator.parameters(), lr = self.lr)
 
         if self.d_optimizer_type == OptimizerNames.ADAM:
             self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr = self.lr, betas=(0.5, 0.999))
         if self.d_optimizer_type == OptimizerNames.SGD:
             self.d_optimizer = optim.SGD(self.discriminator.parameters(), lr = self.lr, momentum = 0.9)
+        if self.d_optimizer_type == OptimizerNames.NADAM:
+            self.d_optimizer = optim.NAdam(self.discriminator.parameters(), lr = self.lr)
 
     def vector_to_images(self, vectors, dsize: tuple = (32, 32)):
         return vectors.view(vectors.size(0), self.nchannel, dsize[0], dsize[1])
@@ -93,31 +101,25 @@ class DCGan():
     def load(self, model_path: str):
         self.generator = torch.jit.load(model_path)
 
-    def fit(self):
-        if self.data_type == DatasetNames.CIFAR10:
-            dataloader = Datasets.get_cifar_as_dataloaders(datapath = self.paths_dict["data"], 
-                                                           specialist_class = self.specialist_class)
-        else:
-            raise Exception("data_type não implementado ainda.")
+    def fit(self, train_loader, test_loader, save_files: bool = True):
 
-        self.nchannel = next(iter(dataloader))[0].size(1)
+        self.nchannel = next(iter(train_loader))[0].size(1)
         self.setup_network()
         self.setup_optimizer()
 
-        epoch_g_loss, epoch_d_loss = [], []
+        epoch_g_loss, epoch_d_loss, fid_history = [], [], []
         # Establish convention for real and fake labels during training
-        real_label = 1.
-        fake_label = 0.
-        d_train_steps = 1
+        # real_label = 1.
+        # fake_label = 0.
+        d_train_steps = 3
     
         print("Starting Training Loop...")
         # For each epoch
         for epoch in tqdm(range(self.num_epochs)):
             # For each batch in the dataloader
-            G_losses, D_losses = [], []
-            
-            for i, data in enumerate(dataloader, 0):
-                
+            G_losses, D_losses, FID_losses = [], [], []
+
+            for i, (data, test) in enumerate(zip(train_loader, test_loader)):
                 D_step_loss = []
                 real_img = data[0].to(self.device)
 
@@ -154,22 +156,55 @@ class DCGan():
 
                 g_loss.backward(retain_graph=True)
                 self.g_optimizer.step()
+                
+                transforms.ToPILImage(real_img)
+                fid = FrechetInceptionDistance(feature=64)
+                fid.update(real_img.to_tensor(), real=True)
+                fid.update(fimage, real=False)
+                fid.compute()
+                ###############
+                # test_real_img = test[0].to(self.device)
+                # test_noise = torch.randn(test_real_img.size(0), self.nlatent_space, 1, 1, device = self.device)
 
-            fid = FID.calculate_fretchet(real_img, fimage, self.device)
-            print("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f, FID: %.4f"
-                   %(epoch, self.num_epochs, np.mean(G_losses), np.mean(D_losses), fid))
+                # test_fake_img = self.generator(test_noise)
+                # fid = FID.calculate_fretchet(test_real_img, test_fake_img, self.device)
 
+                # FID_losses.append(fid)
+                ###############
+            # print("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f, FID: %.4f" 
+            #       % (epoch, self.num_epochs, np.mean(G_losses), np.mean(D_losses), np.mean(FID_losses)))
+
+        # print("Epoch[%d/%d], G Loss: %.4f, D Loss: %.4f, FID: %.4f"
+        #         %(epoch + 1, self.num_epochs, np.mean(G_losses), np.mean(D_losses), fid))
+
+        if save_files:
             epoch_g_loss.append(np.mean(G_losses))
             epoch_d_loss.append(np.mean(D_losses))
+            # fid_history.append(fid)
         
-        self.save(model = self.generator, filename = f'model_{self.specialist_class}.pt')
+            self.save(model = self.generator, filename = f'model_{self.specialist_class}.pt')
 
-        Utils.save_list_as_txt(epoch_g_loss, self.paths_dict["eval_metrics"], name = "generator_losses")
-        Utils.save_list_as_txt(epoch_d_loss, self.paths_dict["eval_metrics"], name = "discriminator_losses")
+            Utils.save_list_as_txt(epoch_g_loss, self.paths_dict["eval_metrics"], name = "generator_losses")
+            Utils.save_list_as_txt(epoch_d_loss, self.paths_dict["eval_metrics"], name = "discriminator_losses")
+            Utils.save_list_as_txt(fid_history, self.paths_dict["eval_metrics"], name = "fid_history_eval")
 
-        Vis.plot_gan_train_evolution(epoch_g_loss, epoch_d_loss, self.paths_dict["eval_imgs"], "gan_loss_evolution")
+            Vis.plot_gan_train_evolution(epoch_g_loss, epoch_d_loss, self.paths_dict["eval_imgs"], "gan_loss_evolution")
 
-        return G_losses[-1]
+        return g_loss
+    
+    def eval(self, test_loader):
+        fid_list = []
+        print("Starting Eval Loop...")
+        for _, data in tqdm(enumerate(test_loader, 0)):
+            real_img = data[0].to(self.device)
+            noise = torch.randn(real_img.size(0), self.nlatent_space, 1, 1, device = self.device)
+
+            fake_img = self.generator(noise)
+            fid = FID.calculate_fretchet(real_img, fake_img, self.device)
+
+            fid_list.append(fid)
+
+        return np.mean(fid_list)
 
     def train_discriminator(self, real_img, fake_img):
         # noise = torch.randn(real_cpu.size(0), self.nlatent_space, 1, 1, device = self.device)
