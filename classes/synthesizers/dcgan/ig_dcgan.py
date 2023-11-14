@@ -154,6 +154,13 @@ class DCGanIgnite():
         print(f"*    FID : {fid_score:4f}")
         print(f"*    IS : {is_score:4f}")
 
+    def generate_synthetic_imgs(self, engine):
+        Vis.synthesize(generator = self.netG,
+                       nsamples = 1000,
+                       nlatent_space = self.nlatent_space,
+                       img_path = self.paths_dict["fake_imgs"],
+                       device = idist.device())
+
     # @trainer.on(Events.ITERATION_COMPLETED(every=50))
     def store_images(self, engine):
         fixed_noise = torch.randn(64, self.nlatent_space, 1, 1, device=idist.device())
@@ -246,6 +253,7 @@ class DCGanIgnite():
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED, self.log_training_results)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), self.store_images)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.log_similarity_result)
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.generate_synthetic_imgs)
         
         fid_metric, is_metric = self.get_metrics()
         fid_metric.attach(self.evaluator, "fid")

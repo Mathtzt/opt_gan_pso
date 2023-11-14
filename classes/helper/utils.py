@@ -19,6 +19,10 @@ class Utils:
         #TODO CIFAR10 mean = (0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225)
         return transforms.Normalize(mean= [-m/s for m, s in zip(mean, std)],
                                     std= [1/s for s in std])
+    
+    @staticmethod
+    def vector_to_images(vectors, nchannel: int = 3, dsize: tuple = (32, 32)):
+        return vectors.view(vectors.size(0), nchannel, dsize[0], dsize[1])
 
     @staticmethod
     def criar_pasta(path, name, use_date = False):

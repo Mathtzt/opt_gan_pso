@@ -38,6 +38,8 @@ class Experiments:
         paths_dict["eval_imgs"] = Utils.criar_pasta(path = paths_dict.get("exp"), name = "eval_imgs")
         paths_dict["eval_metrics"] = Utils.criar_pasta(path = paths_dict.get("exp"), name = "eval_metrics")
 
+        paths_dict["fake_imgs"] = Utils.criar_pasta(path = paths_dict.get("eval_imgs"), name = f"{self.exp_dict.dataset.class_name}_imgs")
+
         return paths_dict
     
     def load_data(self):

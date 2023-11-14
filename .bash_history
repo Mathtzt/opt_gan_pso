@@ -310,3 +310,13 @@ python main.py
 python main.py
 python main.py
 python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+clear
+python main.py

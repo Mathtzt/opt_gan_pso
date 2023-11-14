@@ -158,3 +158,37 @@ class Vis:
                 img_path = os.path.join(class_dir, img_name)
                 
                 plt.imsave(img_path, img)
+
+    @staticmethod
+    def synthesize(generator, nsamples, nlatent_space, img_path, device):
+
+        ## Verificando se há um modelo instanciado ##
+        if generator is None:
+            return "Necessário carregar um modelo previamente. Utilize a função load()."
+
+        ## Gerando imagens sintéticas ##
+        # Carregando ruido aleatório   
+        latent_space_samples = torch.randn(nsamples, nlatent_space, 1, 1, device = device)
+        # Sintetizando
+        generator.eval()
+        generated_samples = generator(latent_space_samples)
+        # Convertendo vetores para imagens
+        generated_imgs = Utils.vector_to_images(vectors = generated_samples)
+        # Desnormalizando
+        desnorm_func = Utils.inverse_normalize(mean = (0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225))
+        desnorm_imgs = desnorm_func(generated_imgs)
+        # Alterando device para cpu
+        desnorm_imgs = desnorm_imgs.cpu().detach()
+
+        # Salvando imagens
+        for i in range(latent_space_samples.size(0)):
+            # Ajuste a escala para 0-255 e converta para tipo uint8
+            data = (desnorm_imgs[i].permute(1, 2, 0)).numpy()
+            # data = data.reshape((data.shape[0], data.shape[1]))
+            data = (data * 255).astype(np.uint8)
+            # Crie um objeto de imagem usando a matriz de dados
+            image = Image.fromarray(data, mode='RGB')
+            # Especifique o caminho do arquivo onde deseja salvar a imagem
+            filename = f'{img_path}/img_{i}.jpg' 
+            # Salve a imagem
+            image.save(filename)
