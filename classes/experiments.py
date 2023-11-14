@@ -5,11 +5,13 @@ import math
 from classes.base.enums import DatasetNames, HeuristicNames, OptimizerNames
 from classes.base.namespaces import ExperimentDict
 from classes.helper.datasets import Datasets
+from classes.helper.vis import Vis
 from classes.helper.utils import Utils
 from classes.optimizers.pso import PSO
 from classes.synthesizers.dcgan.dcgan import DCGan
 from classes.synthesizers.dcgan.dcgan2 import DCGan as DCGAN2
 from classes.synthesizers.dcgan.ig_dcgan import DCGanIgnite
+from tqdm import tqdm
 
 class Experiments:
     def __init__(self,
@@ -21,6 +23,8 @@ class Experiments:
         self.base_dir = base_dir
         self.paths_dict: dict = self.create_dirs()
         self.data: tuple = self.load_data()
+        
+        self.generate_test_data_imgs()
 
     def create_dirs(self):
         paths_dict = {}
@@ -49,6 +53,9 @@ class Experiments:
         else:
             raise Exception("data_type não implementado ainda.")
     
+    def generate_test_data_imgs(self):
+        Vis.gen_and_save_img(self.paths_dict["data"])
+
     def run(self):
 
         if self.exp_dict.heuristic_opt.name == HeuristicNames.PSO:

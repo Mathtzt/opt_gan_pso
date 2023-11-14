@@ -1,6 +1,8 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import PIL.Image as Image
+from classes.helper.datasets import Datasets
 
 import torch
 import torchvision.transforms as transforms
@@ -131,3 +133,28 @@ class Vis:
             arr.append(transforms.ToTensor()(resized_img))
         
         return torch.stack(arr)
+    
+    @staticmethod
+    def gen_and_save_img(base_path):
+        output_dir = 'cifar10_test'
+        full_path = os.path.join(base_path, output_dir)
+        if not os.path.exists(full_path):
+            os.mkdir(full_path)
+
+        test_dataset = Datasets.get_cifar10_test_dataset(datapath = base_path)
+
+        classes = test_dataset.classes
+        for idx, (img, label) in enumerate(zip(test_dataset.data, test_dataset.targets)):
+            # Criar diretório para a classe se não existir
+            class_dir = os.path.join(full_path, str(classes[label]))
+            if not os.path.exists(class_dir):
+                os.mkdir(class_dir)
+
+            if len(os.listdir(class_dir)) == 1000:
+                return
+            else:
+                # Salvar imagem
+                img_name = f"image_{idx}.png"
+                img_path = os.path.join(class_dir, img_name)
+                
+                plt.imsave(img_path, img)

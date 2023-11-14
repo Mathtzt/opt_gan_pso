@@ -69,6 +69,12 @@ class Datasets:
             test_subset = Datasets.__obter_subamostra(test_subset, nsamples)
 
         return train_subset, test_subset
+    
+    @staticmethod
+    def get_cifar10_test_dataset(datapath: str = "./data/"):
+        test_dataset = torchvision.datasets.CIFAR10(root = datapath, train = False, download = True)
+
+        return test_dataset
         
     @staticmethod
     def __obter_subamostra(dataset, tamanho_amostra: int = 1000, seed: int = 42, nclasses: int = 10):

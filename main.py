@@ -24,7 +24,7 @@ exp_dict = ExperimentDict(name = "exp",
                               max_evaluations = 5
                           ),
                           synthesizer = DCGANDict(
-                              num_epochs = 300,
+                              num_epochs = 5,
                               batch_size = 128,
                               lr = 2e-4,
                               goptimizer = OptimizerNames.ADAM,
