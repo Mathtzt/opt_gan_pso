@@ -28,6 +28,8 @@ ignite.utils.setup_logger(name="ignite.distributed.launcher.Parallel", level=log
 
 from pytorch_fid.inception import InceptionV3
 
+from cleanfid import fid
+
 ### Reproductibility and logging details ###  
 SEED = 42
 random.seed(SEED)
@@ -75,7 +77,7 @@ class DCGanIgnite():
         self.D_losses = []
         self.img_list = []
         self.fid_values = []
-        self.ssim_values = []
+        self.kid_values = []
         self.is_values = []
 
     def setup_network(self):
@@ -160,6 +162,18 @@ class DCGanIgnite():
                        nlatent_space = self.nlatent_space,
                        img_path = self.paths_dict["fake_imgs"],
                        device = idist.device())
+    
+    def compute_kid(self, engine):
+        test_dir = f'cifar10_test/{self.specialist_class}'
+        test_imgs_path = os.path.join(self.paths_dict["data"], test_dir)
+
+        fexp_dir = self.paths_dict["fake_imgs"]
+        kid_score = fid.compute_kid(test_imgs_path, fexp_dir)
+
+        print("\nMetric Scores:")
+        print(f"*    KID : {kid_score:4f}")
+
+        self.kid_values.append(kid_score)
 
     # @trainer.on(Events.ITERATION_COMPLETED(every=50))
     def store_images(self, engine):
@@ -246,24 +260,25 @@ class DCGanIgnite():
         self.setup_optimizer()
 
         self.trainer = Engine(self.training_step)
-        self.evaluator = Engine(self.evaluation_step)
+        # self.evaluator = Engine(self.evaluation_step)
 
         self.trainer.add_event_handler(Events.STARTED, self.init_weights)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED, self.store_losses)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED, self.log_training_results)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), self.store_images)
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.log_similarity_result)
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.log_similarity_result)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.generate_synthetic_imgs)
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.compute_kid)
         
-        fid_metric, is_metric = self.get_metrics()
-        fid_metric.attach(self.evaluator, "fid")
-        is_metric.attach(self.evaluator, "is")
+        # fid_metric, is_metric = self.get_metrics()
+        # fid_metric.attach(self.evaluator, "fid")
+        # is_metric.attach(self.evaluator, "is")
 
         RunningAverage(output_transform=lambda x: x["Loss_G"]).attach(self.trainer, 'Loss_G')
         RunningAverage(output_transform=lambda x: x["Loss_D"]).attach(self.trainer, 'Loss_D')
 
         ProgressBar().attach(self.trainer, metric_names=['Loss_G','Loss_D'])
-        ProgressBar().attach(self.evaluator)
+        # ProgressBar().attach(self.evaluator)
 
         with idist.Parallel(backend='nccl') as parallel:
             parallel.run(self.training)
@@ -273,7 +288,7 @@ class DCGanIgnite():
             # Vis.plot_fid_is_evolution(self.is_values, self.fid_values, self.paths_dict["eval_imgs"], "measures_evolution")
             Vis.plot_real_fake_images(self.train_loader, self.img_list, self.paths_dict["eval_imgs"], "real_fake_samples")
 
-        return self.fid_values[-1]
+        return self.kid_values[-1]
     
 # wrapper class as feature_extractor
 class WrapperInceptionV3(nn.Module):
