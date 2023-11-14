@@ -144,20 +144,25 @@ class Vis:
         test_dataset = Datasets.get_cifar10_test_dataset(datapath = base_path)
 
         classes = test_dataset.classes
-        for idx, (img, label) in enumerate(zip(test_dataset.data, test_dataset.targets)):
+        generate = False
+        for idx, (img, label) in tqdm(enumerate(zip(test_dataset.data, test_dataset.targets)), desc = "Verifying..."):
             # Criar diretório para a classe se não existir
             class_dir = os.path.join(full_path, str(classes[label]))
             if not os.path.exists(class_dir):
                 os.mkdir(class_dir)
 
             if len(os.listdir(class_dir)) == 1000:
-                return
+                break
             else:
                 # Salvar imagem
                 img_name = f"image_{idx}.png"
                 img_path = os.path.join(class_dir, img_name)
                 
                 plt.imsave(img_path, img)
+                generate = True
+
+        msg = "Data already exists in dir." if not generate else "Data generated."
+        print(msg)
 
     @staticmethod
     def synthesize(generator, nsamples, nlatent_space, img_path, device):
@@ -189,6 +194,6 @@ class Vis:
             # Crie um objeto de imagem usando a matriz de dados
             image = Image.fromarray(data, mode='RGB')
             # Especifique o caminho do arquivo onde deseja salvar a imagem
-            filename = f'{img_path}/img_{i}.jpg' 
+            filename = f'{img_path}/img_{i}.png' 
             # Salve a imagem
             image.save(filename)

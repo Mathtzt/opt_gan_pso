@@ -16,7 +16,6 @@ class Utils:
     
     @staticmethod 
     def inverse_normalize(mean = (0.5,), std = (0.5,)):
-        #TODO CIFAR10 mean = (0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225)
         return transforms.Normalize(mean= [-m/s for m, s in zip(mean, std)],
                                     std= [1/s for s in std])
     
