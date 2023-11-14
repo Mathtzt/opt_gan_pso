@@ -65,7 +65,7 @@ class DCGanIgnite():
   
         self.nlatent_space = latent_size
         self.nchannel = next(iter(train_loader))[0].size(1)
-        self.d_train_steps = 5
+        self.d_train_steps = 2
         self.netG = None
         self.netD = None
         self.trainer = None
@@ -185,7 +185,7 @@ class DCGanIgnite():
         fake_img = self.netG(noise)
         output3 = self.netD(fake_img).view(-1)
         # Calculate G's loss based on this output
-        errG = self.criterion(output3, true_label)
+        errG = -torch.mean(torch.log(output3 + 1e-8))#self.criterion(output3, true_label)
         # Calculate gradients for G
         errG.backward(retain_graph=True)
         # Update G
@@ -204,7 +204,7 @@ class DCGanIgnite():
             # Classify all fake batch with D
             output2 = self.netD(fake_img).view(-1)
             # Calculate D's loss on the all-fake batch
-            errD_fake = self.criterion(output2, fake_label)
+            errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
             # Compute error of D as sum over the fake and the real batches
             errD = (errD_real + errD_fake) * 0.5
             # Calculate gradients for D
