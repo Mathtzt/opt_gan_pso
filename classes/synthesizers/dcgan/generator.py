@@ -31,7 +31,7 @@ class Generator(nn.Module):
                         )
                     )
 
-        ngf = self.ngf if self.n_conv_blocks > 1 else 100
+        ngf = self.ngf if self.n_conv_blocks > 1 else self.nz
         self.output_conv_block = nn.Sequential(
                 nn.ConvTranspose2d(ngf, self.nc, self.arquitecture_values[self.n_conv_blocks - 1][0], self.arquitecture_values[self.n_conv_blocks - 1][1], self.arquitecture_values[self.n_conv_blocks - 1][2], bias=False),
                 nn.Tanh()

@@ -89,8 +89,6 @@ class DCGanIgnite():
         self.netG = idist.auto_model(Generator(n_conv_blocks = self.g_n_conv_blocks, nc = self.nchannel, nz = self.nlatent_space))
         self.netD = idist.auto_model(Discriminator(n_conv_blocks = self.d_n_conv_blocks, nc = self.nchannel))
 
-        print(self.netD)
-
     def setup_optimizer(self):
         # Initialize the loss function
         # Setup Adam optimizers for both G and D

@@ -65,7 +65,7 @@ class Experiments:
                       paths_dict = self.paths_dict,
                       show_log = False)
             
-            pso.main(func_ = self.get_dcgan_gloss)
+            pso.main(func_ = self.get_dcgan_obj_func_values)
             print("######## RESULTADO ########\n")
             print(self.format_params(pso.best))
 
@@ -80,7 +80,7 @@ class Experiments:
 
         return learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks
 
-    def get_dcgan_gloss(self, params):
+    def get_dcgan_obj_func_values(self, params):
         learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
 
         if self.exp_dict.use_ignite_temp:
@@ -88,11 +88,13 @@ class Experiments:
                                       test_loader = self.data[1],
                                       exp_dict = self.exp_dict,
                                       paths_dict = self.paths_dict,
-                                      g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
-                                      d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
-                                      lr = self.exp_dict.synthesizer.lr,
+                                      g_optimizer_type = goptimizer,
+                                      d_optimizer_type = doptimizer,
+                                      lr = learning_rate,
                                       g_n_conv_blocks = g_n_conv_blocks,
-                                      d_n_conv_blocks = d_n_conv_blocks)
+                                      d_n_conv_blocks = d_n_conv_blocks,
+                                      batch_size = batch_size,
+                                      latent_size = latent_size)
             
             obj_val = synthesizer.fit(save_files = False)
 
@@ -108,8 +110,13 @@ class Experiments:
             obj_val = synthesizer.fit(train_loader = self.data[0],
                                       test_loader = self.data[1],
                                       save_files = False)
+            
+        obj_topology = self.get_func_obj_topology()
 
-        return obj_val,
+        return obj_val, obj_topology
+
+    def get_func_obj_topology(self):
+        return 2 * (self.exp_dict.synthesizer.g_n_conv_blocks ** 2) + (self.exp_dict.synthesizer.d_n_conv_blocks ** 2)
 
     def format_params(self, params):
         learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)

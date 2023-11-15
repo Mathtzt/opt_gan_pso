@@ -1,3 +1,4 @@
+import multiprocessing
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,6 +49,9 @@ class PSO:
         self.creating_particle_register()
         self.creating_population_register()
         self.register_to_update_particles()
+
+        ## inicializando front de pareto
+        pareto = tools.ParetoFront()
 
         ## criando a população
         population = self.toolbox.populationCreator(n = self.population_size)
@@ -117,8 +121,13 @@ class PSO:
 
         avg_fitness_history = [logbook[i]['avg'] for i in range(len(logbook))]
         self.best = best
+        pareto.update(population)
         
         self.print_informacoes_gerais_optimizacao(best)
+        self.criar_grafico_fronte_de_pareto(pareto_front = pareto,
+                                            imgs_path = self.paths_dict['eval_imgs'], 
+                                            img_name = f"pso_pareto_front_{nexecucao}")
+        
         self.criar_grafico_evolucao_fitness(hist_best_fitness = best_fitness_history,
                                             hist_avg_fitness = avg_fitness_history,
                                             imgs_path = self.paths_dict['eval_imgs'], 
@@ -133,6 +142,7 @@ class PSO:
                                 #   igeneration_stopped = igeneration_stopped,
                                   exp_path = self.paths_dict['eval_metrics'])
         
+        self.salvar_historico_em_arquivo_txt([ind.fitness.values for ind in pareto], self.paths_dict['eval_metrics'], f'pareto_front_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(best_fitness_history, self.paths_dict['eval_metrics'], f'best_fitness_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(avg_fitness_history, self.paths_dict['eval_metrics'], f'avg_fitness_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(avg_euclidian_distance_history, self.paths_dict['eval_metrics'], f'dist_particles_{nexecucao}')
@@ -149,7 +159,7 @@ class PSO:
     def define_as_minimization_problem(self):
         creator.create(name = "FitnessMin",
                        base = base.Fitness,
-                       weights = (-1., ))
+                       weights = (-1., -1.))
         
     def creating_particle_class(self):
         creator.create(name = 'Particle',
@@ -250,7 +260,6 @@ class PSO:
         d = {
             'execucao': nexecucao,
             'tamanho_populacao': self.population_size,
-            # 'total_geracoes_realizadas': igeneration_stopped,
             'omega': self.omega,
             'reduce_omega_linearly': self.reduce_omega_linearly,
             'reduction_speed_factor': self.reduction_speed_factor,
@@ -315,6 +324,24 @@ class PSO:
 
         filename = f'{imgs_path}/{img_name}.jpg' 
         plt.savefig(filename)
+
+    def criar_grafico_fronte_de_pareto(self, 
+                                       pareto_front, 
+                                       imgs_path: str, 
+                                       img_name: str):
+        
+        obj1, obj2 = zip(*[ind.fitness.values for ind in pareto_front])
+
+        plt.figure()
+        plt.scatter(x = obj2, y = obj1, c='black', marker='+')
+        
+        plt.title('Front de Pareto')
+        plt.xlabel('Func obj - Topology')
+        plt.ylabel('Func obj - KID')
+
+        filename = f'{imgs_path}/{img_name}.jpg' 
+        plt.savefig(filename)
+
 
     def criar_grafico_evolucao_distancia_media_pontos(self, 
                                                       hist_dist_pontos: list,
