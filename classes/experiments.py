@@ -76,7 +76,7 @@ class Experiments:
         batch_size = [8, 16, 32, 64, 128][math.floor(params[3])]
         latent_size = [10, 20, 50, 100][math.floor(params[4])]
         g_n_conv_blocks = [1, 2, 3, 4, 5, 6, 7][math.floor(params[5])]
-        d_n_conv_blocks = [1, 2, 3, 4, 5, 6, 7][math.floor(params[6])]
+        d_n_conv_blocks = [2, 3, 4, 5, 6, 7][math.floor(params[6])]
 
         return learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks
 
