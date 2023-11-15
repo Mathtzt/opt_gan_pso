@@ -75,11 +75,13 @@ class Experiments:
         doptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM, OptimizerNames.NADAM][math.floor(params[2])]
         batch_size = [8, 16, 32, 64, 128][math.floor(params[3])]
         latent_size = [10, 20, 50, 100][math.floor(params[4])]
+        g_n_conv_blocks = [1, 2, 3, 4, 5, 6, 7][math.floor(params[5])]
+        d_n_conv_blocks = [1, 2, 3, 4, 5, 6, 7][math.floor(params[6])]
 
-        return learning_rate, goptimizer, doptimizer, batch_size, latent_size
+        return learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks
 
     def get_dcgan_gloss(self, params):
-        learning_rate, goptimizer, doptimizer, batch_size, latent_size = self.convert_params(params)
+        learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
 
         if self.exp_dict.use_ignite_temp:
             synthesizer = DCGanIgnite(train_loader = self.data[0],
@@ -88,7 +90,9 @@ class Experiments:
                                       paths_dict = self.paths_dict,
                                       g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
                                       d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
-                                      lr = self.exp_dict.synthesizer.lr)
+                                      lr = self.exp_dict.synthesizer.lr,
+                                      g_n_conv_blocks = g_n_conv_blocks,
+                                      d_n_conv_blocks = d_n_conv_blocks)
             
             obj_val = synthesizer.fit(save_files = False)
 
@@ -108,14 +112,16 @@ class Experiments:
         return obj_val,
 
     def format_params(self, params):
-        learning_rate, goptimizer, doptimizer, batch_size, latent_size = self.convert_params(params)
+        learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
         
         return "'learning_rate'={}\n " \
                "'g_optimizer'='{}'\n " \
                "'d_optimizer'='{}'\n " \
                "'batch_size'='{}'\n " \
                "'latent_size'='{}'\n " \
-            .format(learning_rate, goptimizer, doptimizer, batch_size, latent_size)
+               "'g_n_conv_blocks'='{}'\n " \
+               "'d_n_conv_blocks'='{}'\n " \
+            .format(learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks)
     
     def train_synthesize_imgs(self):
         # synthesizer = DCGan(exp_dict = self.exp_dict,
@@ -131,7 +137,9 @@ class Experiments:
                                       paths_dict = self.paths_dict,
                                       g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
                                       d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
-                                      lr = self.exp_dict.synthesizer.lr)
+                                      lr = self.exp_dict.synthesizer.lr,
+                                      g_n_conv_blocks = self.exp_dict.synthesizer.g_n_conv_blocks,
+                                      d_n_conv_blocks = self.exp_dict.synthesizer.d_n_conv_blocks)
             synthesizer.fit()
 
         else:

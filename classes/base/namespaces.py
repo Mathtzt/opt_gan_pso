@@ -26,6 +26,8 @@ class DCGANDict(NamedTuple):
     lr: float
     goptimizer: OptimizerNames
     doptimizer: OptimizerNames
+    g_n_conv_blocks: int
+    d_n_conv_blocks: int
 
 class ExperimentDict(NamedTuple):
     name: str

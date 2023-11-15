@@ -47,6 +47,8 @@ class DCGanIgnite():
                  g_optimizer_type: OptimizerNames,
                  d_optimizer_type: OptimizerNames,
                  lr: float,
+                 g_n_conv_blocks: int,
+                 d_n_conv_blocks: int,
                  batch_size: int = None,
                  latent_size: int = 100):
 
@@ -56,6 +58,8 @@ class DCGanIgnite():
         self.g_optimizer_type = g_optimizer_type
         self.d_optimizer_type = d_optimizer_type
         self.lr = lr
+        self.g_n_conv_blocks = g_n_conv_blocks
+        self.d_n_conv_blocks = d_n_conv_blocks
         
         self.data_type = exp_dict.dataset.type
         self.specialist_class = exp_dict.dataset.class_name
@@ -82,7 +86,7 @@ class DCGanIgnite():
 
     def setup_network(self):
         # Create the Gerador
-        self.netG = idist.auto_model(Generator(nz = self.nlatent_space, nc = self.nchannel))
+        self.netG = idist.auto_model(Generator(n_conv_blocks = self.g_n_conv_blocks, nc = self.nchannel, nz = self.nlatent_space))
         self.netD = idist.auto_model(Discriminator(nc = self.nchannel))
 
     def setup_optimizer(self):
@@ -177,7 +181,7 @@ class DCGanIgnite():
 
     # @trainer.on(Events.ITERATION_COMPLETED(every=50))
     def store_images(self, engine):
-        fixed_noise = torch.randn(64, self.nlatent_space, 1, 1, device=idist.device())
+        fixed_noise = torch.randn(self.batch_size, self.nlatent_space, 1, 1, device=idist.device())
 
         with torch.no_grad():
             fake = self.netG(fixed_noise).cpu()
@@ -192,6 +196,7 @@ class DCGanIgnite():
 
         real = data[0].to(idist.device())
         b_size = real.size(0)
+
         true_label = torch.full((b_size,), real_label_value, dtype=torch.float, device=idist.device())
         fake_label = torch.full((b_size,), fake_label_value, dtype=torch.float, device=idist.device())
 
@@ -200,7 +205,6 @@ class DCGanIgnite():
         # (1) Update G network: maximize log(D(G(z)))
         ###########################
         self.netG.zero_grad()
-
         noise = torch.randn(b_size, self.nlatent_space, 1, 1, device=idist.device())
 
         fake_img = self.netG(noise)
@@ -224,6 +228,7 @@ class DCGanIgnite():
             errD_real = self.criterion(output1, true_label)
             # Classify all fake batch with D
             output2 = self.netD(fake_img).view(-1)
+
             # Calculate D's loss on the all-fake batch
             errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
             # Compute error of D as sum over the fake and the real batches

@@ -11,8 +11,8 @@ exp_dict = ExperimentDict(name = "exp",
                           nexecucoes = 1,
                           heuristic_opt = PSODict(
                               name = HeuristicNames.PSO,
-                              l_bound = [0.0005, 0, 0, 0, 0],
-                              u_bound = [0.0100, 2.999, 2.999, 5.999, 4.999],
+                              l_bound = [0.0005, 0, 0, 0, 0, 0, 0],
+                              u_bound = [0.0100, 2.999, 2.999, 4.999, 3.999, 6.999, 4.999],
                               population_size = 10,
                               omega = 0.9,
                               min_speed = -3.0,
@@ -28,7 +28,9 @@ exp_dict = ExperimentDict(name = "exp",
                               batch_size = 128,
                               lr = 2e-4,
                               goptimizer = OptimizerNames.ADAM,
-                              doptimizer = OptimizerNames.ADAM
+                              doptimizer = OptimizerNames.ADAM,
+                              g_n_conv_blocks = 7,
+                              d_n_conv_blocks = 3
                           ),
                           use_ignite_temp = True)
 
