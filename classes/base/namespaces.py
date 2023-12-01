@@ -28,6 +28,7 @@ class DCGANDict(NamedTuple):
     doptimizer: OptimizerNames
     g_n_conv_blocks: int
     d_n_conv_blocks: int
+    latent_size: int
 
 class ExperimentDict(NamedTuple):
     name: str

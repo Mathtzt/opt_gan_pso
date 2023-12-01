@@ -33,6 +33,7 @@ class PSO:
         self.max_evaluations = exp_dict.heuristic_opt.max_evaluations
         self.nout_bounds = 0
         self.best = None
+        self.special_particle = True
         self.toolbox = base.Toolbox()
 
     def main(self, 
@@ -45,17 +46,19 @@ class PSO:
         ## inicializações
         self.define_as_minimization_problem()
         self.creating_particle_class()
-        self.create_particle()
         self.creating_particle_register()
         self.creating_population_register()
         self.register_to_update_particles()
 
         ## inicializando front de pareto
-        pareto = tools.ParetoFront()
+        # pareto = tools.ParetoFront()
+
+        pool = multiprocessing.Pool()
+        self.toolbox.register("map", pool.map)
 
         ## criando a população
         population = self.toolbox.populationCreator(n = self.population_size)
-
+    
         ## criando objeto para salvar as estatísticas
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register('min', np.min)
@@ -76,7 +79,7 @@ class PSO:
         avg_euclidian_distance_history = []
 
         for idx, generation in enumerate(range(1, self.max_evaluations + 1)):
-            print(f"### Geração {idx} ###")
+            print(f"### Geração {generation} ###")
             # reduzindo omega linearmente
             if self.reduce_omega_linearly:
                 omega = self.omega - (idx * (self.omega - 0.4) / (self.max_evaluations * self.reduction_speed_factor))
@@ -118,31 +121,39 @@ class PSO:
                     print(logbook.stream + f" | omega = {omega}")
                 else:
                     print(logbook.stream)
+            
+            self.criar_registro_avaliacoes(naval = generation,
+                                           population = population,
+                                           best_fitness_history = best_fitness_history,
+                                           avg_fitness_history = [logbook[i]['avg'] for i in range(len(logbook))],
+                                           avg_euclidian_distance_history = avg_euclidian_distance_history,
+                                           exp_path = self.paths_dict['eval_metrics'])
 
         avg_fitness_history = [logbook[i]['avg'] for i in range(len(logbook))]
         self.best = best
-        pareto.update(population)
+    
+        # pareto.update(population)
         
         self.print_informacoes_gerais_optimizacao(best)
-        self.criar_grafico_fronte_de_pareto(pareto_front = pareto,
-                                            imgs_path = self.paths_dict['eval_imgs'], 
-                                            img_name = f"pso_pareto_front_{nexecucao}")
+        # self.criar_grafico_fronte_de_pareto(pareto_front = pareto,
+        #                                     imgs_path = self.paths_dict['eval_imgs'], 
+        #                                     img_name = f"pso_pareto_front_{nexecucao}")
         
         self.criar_grafico_evolucao_fitness(hist_best_fitness = best_fitness_history,
                                             hist_avg_fitness = avg_fitness_history,
                                             imgs_path = self.paths_dict['eval_imgs'], 
                                             img_name = f"pso_exec_{nexecucao}",
-                                            use_log = True)
+                                            use_log = False)
         self.criar_grafico_evolucao_distancia_media_pontos(hist_dist_pontos = avg_euclidian_distance_history,
                                                            imgs_path = self.paths_dict['eval_imgs'],
                                                            img_name = f"pso_distance_particles_{nexecucao}")
         self.criar_registro_geral(nexecucao = nexecucao,
                                   best_particle = best,
-                                  best_fitness = best.fitness.values[0],
+                                  best_fitness = best.fitness.values,
                                 #   igeneration_stopped = igeneration_stopped,
                                   exp_path = self.paths_dict['eval_metrics'])
         
-        self.salvar_historico_em_arquivo_txt([ind.fitness.values for ind in pareto], self.paths_dict['eval_metrics'], f'pareto_front_{nexecucao}')
+        # self.salvar_historico_em_arquivo_txt([ind.fitness.values for ind in pareto], self.paths_dict['eval_metrics'], f'pareto_front_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(best_fitness_history, self.paths_dict['eval_metrics'], f'best_fitness_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(avg_fitness_history, self.paths_dict['eval_metrics'], f'avg_fitness_{nexecucao}')
         self.salvar_historico_em_arquivo_txt(avg_euclidian_distance_history, self.paths_dict['eval_metrics'], f'dist_particles_{nexecucao}')
@@ -159,7 +170,7 @@ class PSO:
     def define_as_minimization_problem(self):
         creator.create(name = "FitnessMin",
                        base = base.Fitness,
-                       weights = (-1., -1.))
+                       weights = (-1.,))
         
     def creating_particle_class(self):
         creator.create(name = 'Particle',
@@ -194,12 +205,16 @@ class PSO:
         
     def create_particle(self):
         arr_values = np.zeros(self.nparams)
-        for i in range(self.nparams):
-            arr_values[i] = np.random.uniform(low = self.l_bound[i],
-                                              high = self.u_bound[i],
-                                              size = 1)
+        if not self.special_particle:
+            for i in range(self.nparams):
+                arr_values[i] = np.random.uniform(low = self.l_bound[i],
+                                                high = self.u_bound[i],
+                                                size = 1)
 
-        particle = creator.Particle(arr_values)
+            particle = creator.Particle(arr_values)
+        else:
+            particle = creator.Particle(np.array([0.0002, 1.500, 1.500, 4.999, 4.500, 4.500]))
+            self.special_particle = False
         
         particle.speed = np.random.uniform(low = self.min_speed,
                                            high = self.max_speed,
@@ -251,6 +266,24 @@ class PSO:
         self.toolbox.register(alias = 'update',
                               function = self.update_particle)
         
+    def criar_registro_avaliacoes(self, naval: int,
+                                  population: list, 
+                                  best_fitness_history: list,
+                                  avg_fitness_history: list,
+                                  avg_euclidian_distance_history: list,
+                                  exp_path: str):
+        d = {
+            'n_aval': naval,
+            'population': population,
+            'best_fit_hist': best_fitness_history,
+            'avg_fit_hist': avg_fitness_history,
+            'avg_ed_hist': avg_euclidian_distance_history
+        }
+
+        self.salvar_registro_geral(registro = d,
+                                   exp_path = exp_path,
+                                   filename = 'log_optimization_history')
+        
     def criar_registro_geral(self, 
                              nexecucao: int,  
                              best_particle: list,
@@ -293,10 +326,11 @@ class PSO:
     
     def salvar_registro_geral(self,
                               registro: dict,
-                              exp_path: str):
+                              exp_path: str,
+                              filename: str = 'opt_history'):
         
         df_registro = pd.DataFrame([registro])
-        Utils.save_experiment_as_csv(base_dir = exp_path, dataframe = df_registro, filename = 'opt_history')
+        Utils.save_experiment_as_csv(base_dir = exp_path, dataframe = df_registro, filename = filename)
 
     def salvar_historico_em_arquivo_txt(self, lista: list, caminho_do_arquivo: str, nome_do_arquivo: str):
         Utils.save_list_as_txt(lista, caminho_do_arquivo, nome_do_arquivo)
@@ -335,7 +369,7 @@ class PSO:
         plt.figure()
         plt.scatter(x = obj2, y = obj1, c='black', marker='+')
         
-        plt.title('Front de Pareto')
+        plt.title('Pareto Front')
         plt.xlabel('Func obj - Topology')
         plt.ylabel('Func obj - KID')
 

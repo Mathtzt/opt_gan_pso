@@ -11,9 +11,9 @@ exp_dict = ExperimentDict(name = "exp",
                           nexecucoes = 1,
                           heuristic_opt = PSODict(
                               name = HeuristicNames.PSO,
-                              l_bound = [0.0005, 0, 0, 0, 0, 0, 0],
-                              u_bound = [0.0100, 2.999, 2.999, 4.999, 3.999, 6.999, 5.999],
-                              population_size = 10,
+                              l_bound = [0.0005, 0, 0, 0, 0, 0],
+                              u_bound = [0.0100, 2.999, 2.999, 4.999, 5.999, 5.999],
+                              population_size = 20,
                               omega = 0.9,
                               min_speed = -3.0,
                               max_speed = 3.0,
@@ -21,16 +21,17 @@ exp_dict = ExperimentDict(name = "exp",
                               social_update_factor = 2.0,
                               reduce_omega_linearly = True,
                               reduction_speed_factor = 1,
-                              max_evaluations = 5
+                              max_evaluations = 20
                           ),
                           synthesizer = DCGANDict(
-                              num_epochs = 300,
-                              batch_size = 128,
-                              lr = 2e-4,
-                              goptimizer = OptimizerNames.ADAM,
-                              doptimizer = OptimizerNames.ADAM,
-                              g_n_conv_blocks = 4,
-                              d_n_conv_blocks = 4
+                              num_epochs = 5,
+                              batch_size = 8,
+                              lr = 0.0005,
+                              goptimizer = OptimizerNames.NADAM,
+                              doptimizer = OptimizerNames.NADAM,
+                              g_n_conv_blocks = 2,
+                              d_n_conv_blocks = 4,
+                              latent_size = 100
                           ),
                           use_ignite_temp = True)
 

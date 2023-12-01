@@ -181,7 +181,7 @@ class DCGanIgnite():
 
     # @trainer.on(Events.ITERATION_COMPLETED(every=50))
     def store_images(self, engine):
-        fixed_noise = torch.randn(self.batch_size, self.nlatent_space, 1, 1, device=idist.device())
+        fixed_noise = torch.randn(128, self.nlatent_space, 1, 1, device=idist.device())
 
         with torch.no_grad():
             fake = self.netG(fixed_noise).cpu()
@@ -269,7 +269,7 @@ class DCGanIgnite():
 
         self.trainer.add_event_handler(Events.STARTED, self.init_weights)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED, self.store_losses)
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED, self.log_training_results)
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = 50), self.log_training_results)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), self.store_images)
         # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.log_similarity_result)
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every = self.num_epochs), self.generate_synthetic_imgs)
@@ -282,7 +282,7 @@ class DCGanIgnite():
         RunningAverage(output_transform=lambda x: x["Loss_G"]).attach(self.trainer, 'Loss_G')
         RunningAverage(output_transform=lambda x: x["Loss_D"]).attach(self.trainer, 'Loss_D')
 
-        ProgressBar().attach(self.trainer, metric_names=['Loss_G','Loss_D'])
+        # ProgressBar().attach(self.trainer, metric_names=['Loss_G','Loss_D'])
         # ProgressBar().attach(self.evaluator)
 
         with idist.Parallel(backend='nccl') as parallel:

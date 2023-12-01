@@ -53,7 +53,7 @@ class Utils:
     def save_list_as_txt(l: list, path: str = './', name: str = 'loss', log: bool = True):
         with open(f'{path}/{name}.txt', 'w') as fp:
             for item in l:
-                fp.write("%s\n" % item)
+                fp.write("%s\n" % str(item))
 
         if log:
             print(f'File {name} was saved.')

@@ -54,14 +54,21 @@ class Vis:
     @staticmethod
     def plot_real_fake_images(train_loader, img_list, path, figname):
         # Grab a batch of real images from the dataloader
-        real_batch = next(iter(train_loader))
+        real_images = []
+        num_images_to_accumulate = 128
 
+        while len(real_images) < num_images_to_accumulate:
+            batch = next(iter(train_loader))
+            real_images.append(batch[0])
+
+        # Concatenar as batches acumuladas para formar real_batch
+        real_batch = torch.cat(real_images, dim=0)[:num_images_to_accumulate]
         # Plot the real images
         plt.figure(figsize=(15,5))
         plt.subplot(1,2,1)
         plt.axis("off")
         plt.title("Real Images")
-        plt.imshow(np.transpose(vutils.make_grid(real_batch[0][:32], padding=2, normalize=True).cpu(),(1,2,0)))
+        plt.imshow(np.transpose(vutils.make_grid(real_batch[:32], padding=2, normalize=True).cpu(),(1,2,0)))
 
         # Plot the fake images from the last epoch
         plt.subplot(1,2,2)

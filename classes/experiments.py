@@ -74,14 +74,14 @@ class Experiments:
         goptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM, OptimizerNames.NADAM][math.floor(params[1])]
         doptimizer = [OptimizerNames.SGD, OptimizerNames.ADAM, OptimizerNames.NADAM][math.floor(params[2])]
         batch_size = [8, 16, 32, 64, 128][math.floor(params[3])]
-        latent_size = [10, 20, 50, 100][math.floor(params[4])]
-        g_n_conv_blocks = [1, 2, 3, 4, 5, 6, 7][math.floor(params[5])]
-        d_n_conv_blocks = [2, 3, 4, 5, 6, 7][math.floor(params[6])]
+        # latent_size = [10, 20, 50, 100][math.floor(params[4])]
+        g_n_conv_blocks = [2, 3, 4, 5, 6, 7][math.floor(params[4])]
+        d_n_conv_blocks = [2, 3, 4, 5, 6, 7][math.floor(params[5])]
 
-        return learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks
+        return learning_rate, goptimizer, doptimizer, batch_size, g_n_conv_blocks, d_n_conv_blocks
 
     def get_dcgan_obj_func_values(self, params):
-        learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
+        learning_rate, goptimizer, doptimizer, batch_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
 
         if self.exp_dict.use_ignite_temp:
             synthesizer = DCGanIgnite(train_loader = self.data[0],
@@ -93,8 +93,7 @@ class Experiments:
                                       lr = learning_rate,
                                       g_n_conv_blocks = g_n_conv_blocks,
                                       d_n_conv_blocks = d_n_conv_blocks,
-                                      batch_size = batch_size,
-                                      latent_size = latent_size)
+                                      batch_size = batch_size)
             
             obj_val = synthesizer.fit(save_files = False)
 
@@ -104,31 +103,40 @@ class Experiments:
                                 g_optimizer_type = goptimizer,
                                 d_optimizer_type = doptimizer,
                                 lr = learning_rate,
-                                batch_size = batch_size,
-                                latent_size = latent_size)
+                                batch_size = batch_size)
         
             obj_val = synthesizer.fit(train_loader = self.data[0],
                                       test_loader = self.data[1],
                                       save_files = False)
             
-        obj_topology = self.get_func_obj_topology()
+        obj_topology = self.get_func_obj_topology(g_n_conv_blocks, d_n_conv_blocks)
 
-        return obj_val, obj_topology
+        print(f"RUN - KID: {obj_val} | Topology: {obj_topology}")
+        obj_value = 0.7 * obj_val + 0.3 * obj_topology
+        print(f"F_OBJ: {obj_value}")
 
-    def get_func_obj_topology(self):
-        return 2 * (self.exp_dict.synthesizer.g_n_conv_blocks ** 2) + (self.exp_dict.synthesizer.d_n_conv_blocks ** 2)
+        return obj_value,
+
+    def get_func_obj_topology(self, g_n_conv_blocks, d_n_conv_blocks):
+        ### | ### (2 * (g_n_conv_blocks) + (d_n_conv_blocks)) / 21
+        ### (g_n_conv_blocks + d_n_conv_blocks) / 14 
+        value = g_n_conv_blocks + d_n_conv_blocks
+
+        possible_values = [2, 3, 4, 5, 6, 7]
+        min_val, max_val = possible_values[0] * 2, possible_values[-1] * 2
+
+        return (value - min_val) / (max_val - min_val)
 
     def format_params(self, params):
-        learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
+        learning_rate, goptimizer, doptimizer, batch_size, g_n_conv_blocks, d_n_conv_blocks = self.convert_params(params)
         
         return "'learning_rate'={}\n " \
                "'g_optimizer'='{}'\n " \
                "'d_optimizer'='{}'\n " \
                "'batch_size'='{}'\n " \
-               "'latent_size'='{}'\n " \
                "'g_n_conv_blocks'='{}'\n " \
                "'d_n_conv_blocks'='{}'\n " \
-            .format(learning_rate, goptimizer, doptimizer, batch_size, latent_size, g_n_conv_blocks, d_n_conv_blocks)
+            .format(learning_rate, goptimizer, doptimizer, batch_size, g_n_conv_blocks, d_n_conv_blocks)
     
     def train_synthesize_imgs(self):
         # synthesizer = DCGan(exp_dict = self.exp_dict,
@@ -146,7 +154,8 @@ class Experiments:
                                       d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
                                       lr = self.exp_dict.synthesizer.lr,
                                       g_n_conv_blocks = self.exp_dict.synthesizer.g_n_conv_blocks,
-                                      d_n_conv_blocks = self.exp_dict.synthesizer.d_n_conv_blocks)
+                                      d_n_conv_blocks = self.exp_dict.synthesizer.d_n_conv_blocks,
+                                      latent_size = self.exp_dict.synthesizer.latent_size)
             synthesizer.fit()
 
         else:
