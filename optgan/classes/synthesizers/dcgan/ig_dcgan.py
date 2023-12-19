@@ -19,9 +19,9 @@ from ignite.contrib.handlers import ProgressBar
 
 from .generator import Generator
 from .discriminator import Discriminator
-from classes.base.namespaces import ExperimentDict
-from classes.base.enums import OptimizerNames
-from classes.helper.vis import Vis
+from optgan.classes.base.namespaces import ExperimentDict
+from optgan.classes.base.enums import OptimizerNames
+from optgan.classes.helper.vis import Vis
 
 ignite.utils.setup_logger(name="ignite.distributed.auto.auto_dataloader", level=logging.WARNING)
 ignite.utils.setup_logger(name="ignite.distributed.launcher.Parallel", level=logging.WARNING)

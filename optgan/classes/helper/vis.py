@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import PIL.Image as Image
-from classes.helper.datasets import Datasets
+from optgan.classes.helper.datasets import Datasets
 
 import torch
 import torchvision.transforms as transforms
@@ -10,7 +10,7 @@ import torchvision.utils as vutils
 
 from tqdm import tqdm
 from scipy.special import kl_div
-from classes.helper.utils import Utils
+from optgan.classes.helper.utils import Utils
 
 class Vis:
 

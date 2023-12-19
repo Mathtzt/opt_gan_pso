@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from classes.base.namespaces import ExperimentDict
-from classes.helper.utils import Utils
+from optgan.classes.base.namespaces import ExperimentDict
+from optgan.classes.helper.utils import Utils
 
 from deap import base, creator, tools
 

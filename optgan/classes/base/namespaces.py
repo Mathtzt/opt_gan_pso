@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from classes.base.enums import DatasetNames, HeuristicNames, OptimizerNames
+from optgan.classes.base.enums import DatasetNames, HeuristicNames, OptimizerNames
 
 class DatasetDict(NamedTuple):
     type: DatasetNames

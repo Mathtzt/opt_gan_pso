@@ -8,7 +8,7 @@ from torchvision import transforms
 from torch.utils.data.dataset import Subset
 
 from tqdm import tqdm
-from classes.base.enums import Cifar10Classes
+from optgan.classes.base.enums import Cifar10Classes
 
 class Datasets:
         

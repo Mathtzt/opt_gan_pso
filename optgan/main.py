@@ -1,6 +1,6 @@
-from classes.base.enums import Cifar10Classes, DatasetNames, HeuristicNames, OptimizerNames
-from classes.base.namespaces import DCGANDict, DatasetDict, ExperimentDict, PSODict
-from classes.experiments import Experiments
+from optgan.classes.base.enums import Cifar10Classes, DatasetNames, HeuristicNames, OptimizerNames
+from optgan.classes.base.namespaces import DCGANDict, DatasetDict, ExperimentDict, PSODict
+from optgan.classes.experiments import Experiments
 
 def main():
     exp_dict = ExperimentDict(name = "exp",
