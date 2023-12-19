@@ -237,7 +237,7 @@ class DCGanIgnite():
             # Compute error of D as sum over the fake and the real batches
             errD = (errD_real + errD_fake) * 0.5
             # Calculate gradients for D
-            errD.backward(retain_graph=True)
+            errD.backward()
             # Update D
             self.d_optimizer.step()
 
