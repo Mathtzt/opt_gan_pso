@@ -8,8 +8,6 @@ from classes.helper.datasets import Datasets
 from classes.helper.vis import Vis
 from classes.helper.utils import Utils
 from classes.optimizers.pso import PSO
-from classes.synthesizers.dcgan.dcgan import DCGan
-from classes.synthesizers.dcgan.dcgan2 import DCGan as DCGAN2
 from classes.synthesizers.dcgan.ig_dcgan import DCGanIgnite
 from tqdm import tqdm
 
@@ -105,18 +103,6 @@ class Experiments:
                                       latent_size = 100)
             
             obj_val = synthesizer.fit(save_files = False)
-
-        else:
-            synthesizer = DCGAN2(exp_dict = self.exp_dict,
-                                paths_dict = self.paths_dict,
-                                # g_optimizer_type = goptimizer,
-                                d_optimizer_type = doptimizer,
-                                # lr = learning_rate,
-                                batch_size = batch_size)
-        
-            obj_val = synthesizer.fit(train_loader = self.data[0],
-                                      test_loader = self.data[1],
-                                      save_files = False)
             
         # obj_topology = self.get_func_obj_topology(g_n_conv_blocks, d_n_conv_blocks)
 
@@ -173,13 +159,3 @@ class Experiments:
                                       d_n_conv_blocks = self.exp_dict.synthesizer.d_n_conv_blocks,
                                       latent_size = self.exp_dict.synthesizer.latent_size)
             synthesizer.fit()
-
-        else:
-            synthesizer = DCGAN2(exp_dict = self.exp_dict,
-                                paths_dict = self.paths_dict,
-                                g_optimizer_type = self.exp_dict.synthesizer.goptimizer,
-                                d_optimizer_type = self.exp_dict.synthesizer.doptimizer,
-                                lr = self.exp_dict.synthesizer.lr)
-        
-            synthesizer.fit()
-            synthesizer.generate_synthetic_images(exp_dirname = str(self.paths_dict.get("exp")).split("/")[3])
