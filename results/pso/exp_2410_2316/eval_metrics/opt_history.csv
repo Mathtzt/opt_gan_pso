@@ -1,2 +1,0 @@
-execucao,tamanho_populacao,omega,reduce_omega_linearly,reduction_speed_factor,range_speed,cognitive_factor,social_factor,best_particle,best_fitness,out_bounds
-0,20,0.9,True,1,"[-3.0, 3.0]",2.0,2.0,[0.06407781 1.24897539 1.07307854],0.0,9
