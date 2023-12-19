@@ -212,7 +212,7 @@ class DCGanIgnite():
         # Calculate G's loss based on this output
         errG = -torch.mean(torch.log(output3 + 1e-8))#self.criterion(output3, true_label)
         # Calculate gradients for G
-        errG.backward(retain_graph=True)
+        errG.backward()
         # Update G
         self.g_optimizer.step()
 

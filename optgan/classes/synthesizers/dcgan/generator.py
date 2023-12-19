@@ -38,12 +38,14 @@ class Generator(nn.Module):
             )
 
     def forward(self, input):
+        input_ = input.clone()
+
         if self.n_conv_blocks > 1:
             for conv_block in self.conv_blocks:
-                input = conv_block(input)
+                input_ = conv_block(input_)
 
         # Camada de saída
-        output = self.output_conv_block(input)
+        output = self.output_conv_block(input_)
 
         return output
     
