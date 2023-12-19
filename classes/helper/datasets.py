@@ -25,7 +25,7 @@ class Datasets:
             train_loader = idist.auto_dataloader(
                 train_subset,
                 batch_size=batch_size,
-                num_workers=2,
+                num_workers=4,
                 shuffle=True,
                 drop_last=True,
             )
@@ -33,7 +33,7 @@ class Datasets:
             test_loader = idist.auto_dataloader(
                 test_subset,
                 batch_size=batch_size,
-                num_workers=2,
+                num_workers=4,
                 shuffle=False,
                 drop_last=True,
             )

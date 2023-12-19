@@ -435,3 +435,47 @@ python main.py
 python main.py
 python main.py
 python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+python main.py
+python main.py
+singularity cache clean -y
+cd ..
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py 
+python main.py 
+python main.py 
+python main.py 
+python main.py 
+clear
+python main.py
+clear
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+python main.py
+clear
+squeue

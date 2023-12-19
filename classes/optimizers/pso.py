@@ -33,7 +33,7 @@ class PSO:
         self.max_evaluations = exp_dict.heuristic_opt.max_evaluations
         self.nout_bounds = 0
         self.best = None
-        self.special_particle = True
+        self.special_particle = False
         self.toolbox = base.Toolbox()
 
     def main(self, 
@@ -53,8 +53,8 @@ class PSO:
         ## inicializando front de pareto
         # pareto = tools.ParetoFront()
 
-        pool = multiprocessing.Pool()
-        self.toolbox.register("map", pool.map)
+        # pool = multiprocessing.Pool()
+        # self.toolbox.register("map", pool.map)
 
         ## criando a população
         population = self.toolbox.populationCreator(n = self.population_size)
@@ -213,7 +213,7 @@ class PSO:
 
             particle = creator.Particle(arr_values)
         else:
-            particle = creator.Particle(np.array([0.0002, 1.500, 1.500, 4.999, 4.500, 4.500]))
+            # particle = creator.Particle(np.array([0.0002, 1.500, 1.500, 4.999, 4.500, 4.500]))
             self.special_particle = False
         
         particle.speed = np.random.uniform(low = self.min_speed,

@@ -31,12 +31,12 @@ from pytorch_fid.inception import InceptionV3
 from cleanfid import fid
 
 ### Reproductibility and logging details ###  
-SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-ignite.utils.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
+# SEED = 42
+# random.seed(SEED)
+# np.random.seed(SEED)
+# torch.manual_seed(SEED)
+# ignite.utils.manual_seed(SEED)
+# torch.backends.cudnn.deterministic = True
 
 class DCGanIgnite():
     def __init__(self,
