@@ -2,10 +2,10 @@ import os
 import pandas as pd
 import math
 
-from classes.base.enums import DatasetNames, HeuristicNames, OptimizerNames
-from classes.base.namespaces import ExperimentDict
-from classes.helper.datasets import Datasets
-from classes.helper.vis import Vis
+from optgan.classes.base.enums import DatasetNames, HeuristicNames, OptimizerNames
+from optgan.classes.base.namespaces import ExperimentDict
+from optgan.classes.helper.datasets import Datasets
+from optgan.classes.helper.vis import Vis
 from optgan.classes.helper.utils import Utils
 from optgan.classes.optimizers.pso import PSO
 from optgan.classes.synthesizers.dcgan.ig_dcgan import DCGanIgnite
