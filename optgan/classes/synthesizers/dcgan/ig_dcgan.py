@@ -230,7 +230,10 @@ class DCGanIgnite():
             output2 = self.netD(fake_img).view(-1)
 
             # Calculate D's loss on the all-fake batch
-            errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
+            errD_fake = -torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))
+            errD_fake = torch.sum(errD_fake)
+
+            # errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
             # Compute error of D as sum over the fake and the real batches
             errD = (errD_real + errD_fake) * 0.5
             # Calculate gradients for D
