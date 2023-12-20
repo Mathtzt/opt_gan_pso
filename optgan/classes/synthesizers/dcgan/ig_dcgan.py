@@ -216,30 +216,30 @@ class DCGanIgnite():
         # Update G
         self.g_optimizer.step()
 
-        for _ in range(self.d_train_steps):
+        # for _ in range(self.d_train_steps):
             ############################
             # (2) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
             ###########################
             ## Train with all-real batch
-            self.netD.zero_grad()
-            # Forward pass real batch through D
-            output1 = self.netD(real).view(-1)
-            # Calculate loss on all-real batch
-            # errD_real = self.criterion(output1, true_label)
-            # Classify all fake batch with D
-            output2 = self.netD(fake_img).view(-1)
+        self.netD.zero_grad()
+        # Forward pass real batch through D
+        output1 = self.netD(real).view(-1)
+        # Calculate loss on all-real batch
+        # errD_real = self.criterion(output1, true_label)
+        # Classify all fake batch with D
+        output2 = self.netD(fake_img).view(-1)
 
-            # Calculate D's loss on the all-fake batch
-            errD = -torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))
-            errD = torch.sum(errD)
+        # Calculate D's loss on the all-fake batch
+        errD = -torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))
+        errD = torch.sum(errD)
 
-            # errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
-            # Compute error of D as sum over the fake and the real batches
-            # errD = (errD_real + errD_fake) * 0.5
-            # Calculate gradients for D
-            errD.backward()
-            # Update D
-            self.d_optimizer.step()
+        # errD_fake = torch.sum(-torch.mean(torch.log(output1 + 1e-8) + torch.log(1 - output2 + 1e-8))) #self.criterion(output2, fake_label)
+        # Compute error of D as sum over the fake and the real batches
+        # errD = (errD_real + errD_fake) * 0.5
+        # Calculate gradients for D
+        errD.backward()
+        # Update D
+        self.d_optimizer.step()
 
         return {
             "Loss_G" : errG.item(),
