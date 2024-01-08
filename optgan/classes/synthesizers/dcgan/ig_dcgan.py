@@ -181,7 +181,7 @@ class DCGanIgnite():
 
     # @trainer.on(Events.ITERATION_COMPLETED(every=50))
     def store_images(self, engine):
-        fixed_noise = torch.randn(128, self.nlatent_space, 1, 1, device=idist.device())
+        fixed_noise = torch.randn(self.batch_size, self.nlatent_space, 1, 1, device=idist.device())
 
         with torch.no_grad():
             fake = self.netG(fixed_noise).cpu()
