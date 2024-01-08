@@ -1,8 +1,10 @@
+import sys
 from optgan.classes.base.enums import Cifar10Classes, DatasetNames, HeuristicNames, OptimizerNames
 from optgan.classes.base.namespaces import DCGANDict, DatasetDict, ExperimentDict, PSODict
 from optgan.classes.experiments import Experiments
+from optgan.classes.helper.utils import Utils
 
-def main():
+def main(base_dir: str = "./"):
     exp_dict = ExperimentDict(name = "exp",
                             description = "Utilizando PSO para otimizar topologia e hiperparâmetros da DCGAN",
                             dataset = DatasetDict(
@@ -38,10 +40,14 @@ def main():
                             ),
                             use_ignite_temp = True)
 
-    exp = Experiments(exp_dict)
+    exp = Experiments(exp_dict, base_dir)
     exp.run()
     # exp.train_synthesize_imgs()
 
 if __name__ == "__main__":
-    main()
+    log_file_path = Utils.obter_log_filename(nome_base = "log")
+    
+    with open(log_file_path, 'w') as log_file:
+        sys.stdout = log_file
+        main()
     

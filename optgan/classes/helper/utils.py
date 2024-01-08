@@ -22,6 +22,18 @@ class Utils:
     @staticmethod
     def vector_to_images(vectors, nchannel: int = 3, dsize: tuple = (32, 32)):
         return vectors.view(vectors.size(0), nchannel, dsize[0], dsize[1])
+    
+    @staticmethod
+    def obter_log_filename(nome_base):
+        dt = datetime.now()
+        day = dt.strftime("%d")
+        mes = dt.strftime("%m")
+        hour = dt.strftime("%H")
+        mm = dt.strftime("%M")
+        
+        dirname_base = f"_{day}{mes}_{hour}{mm}.txt"
+
+        return nome_base + dirname_base
 
     @staticmethod
     def criar_pasta(path, name, use_date = False):
