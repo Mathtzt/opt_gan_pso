@@ -285,7 +285,7 @@ class DCGanIgnite():
         # ProgressBar().attach(self.trainer, metric_names=['Loss_G','Loss_D'])
         # ProgressBar().attach(self.evaluator)
 
-        with idist.Parallel(backend='xla-tpu', nproc_per_node = 8, start_method = 'fork') as parallel: #'nccl'
+        with idist.Parallel(backend='xla-tpu', nproc_per_node = 1, start_method = 'fork') as parallel: #'nccl'
             parallel.run(self.training)
 
         if save_files:
